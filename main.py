@@ -6,22 +6,24 @@ from PIL import Image
 def generate_headshots(image, num_images, image_quality):
     # Define the DALL-E API endpoint
     api_endpoint = "https://api.openai.com/v1/generators/davinci-codex/images"
-    api_key = st.secrets['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']
-
-    # Set additional parameters for DALL-E image generation
-    params = {
-        "prompt": "Generate professional LinkedIn headshot images.",
-        "num_images": num_images,
-        "image_quality": image_quality
-    }
-
-    # Set authorization headers with your API key
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
-    }
 
     try:
+        # Get the API key from Streamlit secrets
+        api_key = st.secrets['your_api_key_name_here']
+
+        # Set additional parameters for DALL-E image generation
+        params = {
+            "prompt": "Generate professional LinkedIn headshot images.",
+            "num_images": num_images,
+            "image_quality": image_quality
+        }
+
+        # Set authorization headers with your API key
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+
         # Send a POST request to the DALL-E API
         response = requests.post(api_endpoint, json=params, headers=headers)
         response.raise_for_status()  # Raise an exception for HTTP errors
@@ -41,6 +43,9 @@ def generate_headshots(image, num_images, image_quality):
 
         return generated_images
 
+    except KeyError:
+        st.error("API key not found. Please check your Streamlit secrets configuration.")
+        return None
     except requests.exceptions.RequestException as e:
         st.error(f"Error generating headshot images: {e}")
         return None
