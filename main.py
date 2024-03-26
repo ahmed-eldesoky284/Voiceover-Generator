@@ -6,6 +6,7 @@ from PIL import Image
 def generate_headshots(image, num_images, image_quality):
     # Define the DALL-E API endpoint
     api_endpoint = "https://api.openai.com/v1/generators/davinci-codex/images"
+    api_key = st.secrets['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']
 
     # Set additional parameters for DALL-E image generation
     params = {
@@ -17,7 +18,7 @@ def generate_headshots(image, num_images, image_quality):
     # Set authorization headers with your API key
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {st.secrets['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']}"
+        "Authorization": f"Bearer {api_key}"
     }
 
     try:
