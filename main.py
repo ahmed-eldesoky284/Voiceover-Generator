@@ -1,3 +1,4 @@
+import os
 from gtts import gTTS
 import io
 import streamlit as st
@@ -14,14 +15,13 @@ def generate_voiceover(text, voice_gender='female', speed=1.0, pitch=1.0, lang='
     # Initialize gTTS
     tts = gTTS(text=text, lang=lang, slow=False if speed > 1.0 else True)
 
-    # Save the audio to a file-like object
-    output_file = io.BytesIO()
-    tts.write_to_fp(output_file)
+    # Save the audio to a file
+    output_file_path = "output_voiceover.mp3"
+    tts.save(output_file_path)
 
-    # Load the voiceover audio from the file-like object
-    output_file.seek(0)
+    # Load the voiceover audio from the file
     pygame.mixer.init()
-    pygame.mixer.music.load(output_file)
+    pygame.mixer.music.load(output_file_path)
 
     # Set the volume
     pygame.mixer.music.set_volume(volume)
@@ -33,6 +33,8 @@ def generate_voiceover(text, voice_gender='female', speed=1.0, pitch=1.0, lang='
     while pygame.mixer.music.get_busy():
         continue
 
+    return output_file_path
+
 # Streamlit UI
 st.title("Voiceover Generator")
 text_input = st.text_area("Enter text to generate voiceover")
@@ -43,5 +45,5 @@ lang = st.selectbox("Select language", ("en", "ar"))  # English or Arabic
 volume = st.slider("Select volume", min_value=0.0, max_value=1.0, value=0.5, step=0.1)
 if st.button("Generate Voiceover"):
     if text_input:
-        st.audio(generate_voiceover(text_input, voice_gender, speed, pitch, lang, volume), format='audio/mp3')
-
+        output_file_path = generate_voiceover(text_input, voice_gender, speed, pitch, lang, volume)
+        st.audio(output_file_path, format='audio/mp3')
