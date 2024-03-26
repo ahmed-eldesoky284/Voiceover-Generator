@@ -5,7 +5,7 @@ from PIL import Image
 
 def generate_headshots(image, num_images, image_quality):
     # Define the DALL-E API endpoint
-    api_endpoint = "https://api.openai.com/v1/images"
+    api_endpoint = "https://api.openai.com/v1/generators/davinci-codex/images"
 
     # Set your OpenAI API key
     api_key = "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"
