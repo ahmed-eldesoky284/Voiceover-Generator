@@ -3,7 +3,7 @@ import requests
 import io
 from PIL import Image
 
-def generate_headshots(num_images=5, image_size=(1024, 1024)):
+def generate_headshots_from_image(input_image, num_images=5, image_size=(1024, 1024)):
     # Define the DALL-E API endpoint
     api_endpoint = "https://api.openai.com/v1/images"
 
@@ -11,7 +11,7 @@ def generate_headshots(num_images=5, image_size=(1024, 1024)):
     api_key = "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"
 
     # Define the prompt for generating headshots
-    prompt = "Generate professional LinkedIn headshot images."
+    prompt = f"Generate professional LinkedIn headshot images from the uploaded image."
 
     # Set additional parameters for DALL-E image generation
     params = {
@@ -51,17 +51,20 @@ def generate_headshots(num_images=5, image_size=(1024, 1024)):
         return None
 
 def main():
-    # Add a sidebar with options
-    num_images = st.sidebar.number_input("Number of Images", min_value=1, max_value=10, value=5)
-    image_size = st.sidebar.slider("Image Size", min_value=256, max_value=2048, value=1024, step=128)
+    # Add file uploader for image
+    uploaded_image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
-    # Generate headshot images
-    headshots = generate_headshots(num_images=num_images, image_size=(image_size, image_size))
+    if uploaded_image is not None:
+        # Display the uploaded image
+        st.image(uploaded_image, caption="Uploaded Image", use_column_width=True)
 
-    if headshots:
-        # Display or save the generated images
-        for i, image in enumerate(headshots, start=1):
-            st.image(image, caption=f"Generated Headshot {i}")
+        # Generate headshot images from the uploaded image
+        if st.button("Generate Headshots"):
+            headshots = generate_headshots_from_image(uploaded_image)
+            if headshots:
+                # Display or save the generated images
+                for i, image in enumerate(headshots, start=1):
+                    st.image(image, caption=f"Generated Headshot {i}", use_column_width=True)
 
 if __name__ == "__main__":
     main()
