@@ -17,7 +17,7 @@ def generate_headshots(image, num_images, image_quality):
     # Set authorization headers with your API key
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {st.secrets['api_key']}"
+        "Authorization": f"Bearer {st.secrets['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']}"
     }
 
     try:
