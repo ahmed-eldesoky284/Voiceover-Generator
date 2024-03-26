@@ -1,81 +1,57 @@
+
+       
+
 import streamlit as st
-import requests
-import io
-from PIL import Image
+from openai import OpenAI
 
-def generate_headshots(image, num_images, image_quality):
-    # Define the DALL-E API endpoint
-    api_endpoint = "https://api.openai.com/v1/generators/davinci-codex/images"
+# Initialize OpenAI client
+client = OpenAI()
 
+def generate_images(prompt, size, quality, n):
     try:
-        # Get the API key from Streamlit secrets
-        api_key = st.secrets['your_api_key_name_here']
-
-        # Set additional parameters for DALL-E image generation
-        params = {
-            "prompt": "Generate professional LinkedIn headshot images.",
-            "num_images": num_images,
-            "image_quality": image_quality
-        }
-
-        # Set authorization headers with your API key
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}"
-        }
-
-        # Send a POST request to the DALL-E API
-        response = requests.post(api_endpoint, json=params, headers=headers)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-
-        # Parse the response JSON
-        result = response.json()
-
-        # Extract the generated image URLs
-        image_urls = result.get("images")
-
-        # Download and return the generated images
-        generated_images = []
-        for url in image_urls:
-            image_data = requests.get(url).content
-            img = Image.open(io.BytesIO(image_data))
-            generated_images.append(img)
-
-        return generated_images
-
-    except KeyError:
-        st.error("API key not found. Please check your Streamlit secrets configuration.")
+        # Generate images using OpenAI API
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            size=size,
+            quality=quality,
+            n=n
+        )
+        return response["images"]
+    except Exception as e:
+        st.error(f"Error generating images: {e}")
         return None
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error generating headshot images: {e}")
-        return None
-
+def edit_images(image_path, mask_path, prompt, num_images=1, size="1024x1024"):
+    # Use the OpenAI client to edit images
+    response = client.images.edit(
+        image=open(image_path, "rb"),
+        mask=open(mask_path, "rb"),
+        prompt=prompt,
+        n=num_images,
+        size=size
+    )
+    return response
 def main():
-    st.title("AI-Generated Headshots")
-
-    # Upload image
-    uploaded_image = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
-
-    if uploaded_image:
-        st.image(uploaded_image, caption="Uploaded Image", use_column_width=True)
-
-        # Number of headshots to generate
-        num_images = st.slider("Number of Headshots", min_value=1, max_value=10, value=5)
-
-        # Image quality
-        image_quality = st.slider("Image Quality", min_value=0.1, max_value=1.0, value=0.5, step=0.1)
-
-        # Generate headshots button
-        if st.button("Generate Headshots"):
-            # Generate headshots
-            generated_headshots = generate_headshots(uploaded_image, num_images, image_quality)
-
-            if generated_headshots:
-                # Display and save generated headshots
-                for i, img in enumerate(generated_headshots, start=1):
-                    st.image(img, caption=f"Generated Headshot {i}", use_column_width=True)
-                    # Save the image
-                    img.save(f"generated_headshot_{i}.png")
+    st.title("DALL-E Image Generator")
+    
+    # User input for prompt, size, quality, and number of images
+    prompt = st.text_input("Enter prompt", "a white siamese cat")
+    size = st.selectbox("Image size", ["512x512", "1024x1024"])
+    quality = st.selectbox("Image quality", ["standard", "high"])
+    n_images = st.slider("Number of images", min_value=1, max_value=5, value=1)
+    
+    # Generate images button
+    if st.button("Generate Images"):
+        # Generate images
+        images = generate_images(prompt, size, quality, n_images)
+        
+        if images:
+            # Display generated images
+            for i, img in enumerate(images, start=1):
+                st.image(img, caption=f"Generated Image {i}", use_column_width=True)
 
 if __name__ == "__main__":
     main()
+
+
+
