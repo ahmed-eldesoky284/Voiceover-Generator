@@ -27,7 +27,7 @@ def main():
             generate_avatar(input_image_path)
 
             # Display generated avatar
-            generated_image = Image.open("avatar.jpg")
+            generated_image = Image.open("/full/path/to/avatar.jpg")
             st.image(generated_image, caption="Generated Avatar", use_column_width=True)
 
 if __name__ == "__main__":
