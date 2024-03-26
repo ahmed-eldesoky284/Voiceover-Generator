@@ -47,12 +47,21 @@ def generate_headshots(num_images=5, image_size=(1024, 1024)):
         return generated_images
 
     except Exception as e:
-        st.error(f"Error generating headshot images: {e}")
+        print(f"Error generating headshot images: {e}")
+        return None
 
 def main():
-    # Set Streamlit app title
-    st.title("AI Generated LinkedIn Headshots")
-
     # Add a sidebar with options
     num_images = st.sidebar.number_input("Number of Images", min_value=1, max_value=10, value=5)
-    image_size = st.sidebar.slider("Image Size", min_value=256, max_value=2048
+    image_size = st.sidebar.slider("Image Size", min_value=256, max_value=2048, value=1024, step=128)
+
+    # Generate headshot images
+    headshots = generate_headshots(num_images=num_images, image_size=(image_size, image_size))
+
+    if headshots:
+        # Display or save the generated images
+        for i, image in enumerate(headshots, start=1):
+            st.image(image, caption=f"Generated Headshot {i}")
+
+if __name__ == "__main__":
+    main()
