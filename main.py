@@ -3,7 +3,7 @@ import requests
 import io
 from PIL import Image
 
-def generate_headshots(image, num_images=5, image_quality=0.5):
+def generate_headshots(image, num_images, image_quality):
     # Define the DALL-E API endpoint
     api_endpoint = "https://api.openai.com/v1/images"
 
