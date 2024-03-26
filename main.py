@@ -7,7 +7,7 @@ def generate_headshots(num_images=5, image_size=(1024, 1024)):
     api_endpoint = "https://api.openai.com/v1/images"
 
     # Set your OpenAI API key
-    api_key = "YOUR_OPENAI_API_KEY"
+    api_key = "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"
 
     # Define the prompt for generating headshots
     prompt = "Generate professional LinkedIn headshot images."
