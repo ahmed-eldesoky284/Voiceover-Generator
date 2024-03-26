@@ -1,55 +1,52 @@
-  import streamlit as st
-from openai import OpenAI
+import streamlit as st
+import cv2
+import numpy as np
+import tensorflow as tf
+import tensorflow_hub as hub
 
+# Load pre-trained style transfer model
+style_transfer_model = hub.load("https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/2")
 
-# Initialize OpenAI client
-client = OpenAI()
+# Function to apply style transfer to an image
+def apply_style_transfer(image, style_image):
+    # Resize style image to match content image size
+    style_image = cv2.resize(style_image, (image.shape[1], image.shape[0]))
+    # Convert to float32 and normalize pixel values
+    content_image = tf.convert_to_tensor(image, tf.float32) / 255.0
+    style_image = tf.convert_to_tensor(style_image, tf.float32) / 255.0
+    # Apply style transfer
+    stylized_image = style_transfer_model(tf.constant(content_image), tf.constant(style_image))[0]
+    # Convert to numpy array and rescale pixel values
+    stylized_image = (stylized_image.numpy() * 255).astype(np.uint8)
+    return stylized_image
 
-def generate_images(prompt, size, quality, n):
-    try:
-        # Generate images using OpenAI API
-        response = client.images.generate(
-            model="dall-e-3",
-            prompt=prompt,
-            size=size,
-            quality=quality,
-            n=n
-        )
-        return response["images"]
-    except Exception as e:
-        st.error(f"Error generating images: {e}")
-        return None
-def edit_images(image_path, mask_path, prompt, num_images=1, size="1024x1024"):
-    # Use the OpenAI client to edit images
-    response = client.images.edit(
-        image=open(image_path, "rb"),
-        mask=open(mask_path, "rb"),
-        prompt=prompt,
-        n=num_images,
-        size=size
-    )
-    return response
 def main():
-    st.title("DALL-E Image Generator")
-    
-    # User input for prompt, size, quality, and number of images
-    prompt = st.text_input("Enter prompt", "a white siamese cat")
-    size = st.selectbox("Image size", ["512x512", "1024x1024"])
-    quality = st.selectbox("Image quality", ["standard", "high"])
-    n_images = st.slider("Number of images", min_value=1, max_value=5, value=1)
-    
-    # Generate images button
-    if st.button("Generate Images"):
-        # Generate images
-        images = generate_images(prompt, size, quality, n_images)
+    st.title("Real-time Fashion Style Transfer")
+
+    # Initialize video capture object
+    cap = cv2.VideoCapture(0)
+
+    # Load fashion image
+    fashion_image_path = "fashion_image.jpg"
+    fashion_image = cv2.imread(fashion_image_path)
+
+    while cap.isOpened():
+        # Capture frame-by-frame
+        ret, frame = cap.read()
         
-        if images:
-            # Display generated images
-            for i, img in enumerate(images, start=1):
-                st.image(img, caption=f"Generated Image {i}", use_column_width=True)
+        if ret:
+            # Apply style transfer using fashion image style to the captured frame
+            stylized_frame = apply_style_transfer(frame, fashion_image)
+            
+            # Display the original and stylized frames
+            st.image([frame, stylized_frame], caption=["Original Frame", "Stylized Frame"], width=300)
+
+        # Break the loop if 'q' is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Release the capture
+    cap.release()
 
 if __name__ == "__main__":
     main()
-
-
-
