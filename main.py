@@ -3,7 +3,7 @@ import requests
 import io
 from PIL import Image
 
-def generate_headshots_from_image(input_image, num_images=5, image_size=(1024, 1024)):
+def generate_headshots(image, num_images=5, image_quality=0.5):
     # Define the DALL-E API endpoint
     api_endpoint = "https://api.openai.com/v1/images"
 
@@ -11,13 +11,13 @@ def generate_headshots_from_image(input_image, num_images=5, image_size=(1024, 1
     api_key = "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"
 
     # Define the prompt for generating headshots
-    prompt = f"Generate professional LinkedIn headshot images from the uploaded image."
+    prompt = "Generate professional LinkedIn headshot images."
 
     # Set additional parameters for DALL-E image generation
     params = {
         "prompt": prompt,
         "num_images": num_images,
-        "image_size": image_size
+        "image_quality": image_quality
     }
 
     # Set authorization headers with your API key
@@ -41,30 +41,41 @@ def generate_headshots_from_image(input_image, num_images=5, image_size=(1024, 1
         generated_images = []
         for url in image_urls:
             image_data = requests.get(url).content
-            image = Image.open(io.BytesIO(image_data))
-            generated_images.append(image)
+            img = Image.open(io.BytesIO(image_data))
+            generated_images.append(img)
 
         return generated_images
 
     except Exception as e:
-        print(f"Error generating headshot images: {e}")
+        st.error(f"Error generating headshot images: {e}")
         return None
 
 def main():
-    # Add file uploader for image
-    uploaded_image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+    st.title("AI-Generated Headshots")
 
-    if uploaded_image is not None:
-        # Display the uploaded image
+    # Upload image
+    uploaded_image = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
+
+    if uploaded_image:
         st.image(uploaded_image, caption="Uploaded Image", use_column_width=True)
 
-        # Generate headshot images from the uploaded image
+        # Number of headshots to generate
+        num_images = st.slider("Number of Headshots", min_value=1, max_value=10, value=5)
+
+        # Image quality
+        image_quality = st.slider("Image Quality", min_value=0.1, max_value=1.0, value=0.5, step=0.1)
+
+        # Generate headshots button
         if st.button("Generate Headshots"):
-            headshots = generate_headshots_from_image(uploaded_image)
-            if headshots:
-                # Display or save the generated images
-                for i, image in enumerate(headshots, start=1):
-                    st.image(image, caption=f"Generated Headshot {i}", use_column_width=True)
+            # Generate headshots
+            generated_headshots = generate_headshots(uploaded_image, num_images, image_quality)
+
+            if generated_headshots:
+                # Display and save generated headshots
+                for i, img in enumerate(generated_headshots, start=1):
+                    st.image(img, caption=f"Generated Headshot {i}", use_column_width=True)
+                    # Save the image
+                    img.save(f"generated_headshot_{i}.png")
 
 if __name__ == "__main__":
     main()
