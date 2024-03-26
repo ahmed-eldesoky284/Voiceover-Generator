@@ -7,15 +7,9 @@ def generate_headshots(image, num_images, image_quality):
     # Define the DALL-E API endpoint
     api_endpoint = "https://api.openai.com/v1/generators/davinci-codex/images"
 
-    # Set your OpenAI API key
-    api_key = "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"
-
-    # Define the prompt for generating headshots
-    prompt = "Generate professional LinkedIn headshot images."
-
     # Set additional parameters for DALL-E image generation
     params = {
-        "prompt": prompt,
+        "prompt": "Generate professional LinkedIn headshot images.",
         "num_images": num_images,
         "image_quality": image_quality
     }
@@ -23,7 +17,7 @@ def generate_headshots(image, num_images, image_quality):
     # Set authorization headers with your API key
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
+        "Authorization": f"Bearer {st.secrets['api_key']}"
     }
 
     try:
@@ -46,7 +40,7 @@ def generate_headshots(image, num_images, image_quality):
 
         return generated_images
 
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         st.error(f"Error generating headshot images: {e}")
         return None
 
