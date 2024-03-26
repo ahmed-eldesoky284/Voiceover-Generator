@@ -23,30 +23,34 @@ def apply_style_transfer(image, style_image):
 def main():
     st.title("Real-time Fashion Style Transfer")
 
-    # Initialize video capture object
-    cap = cv2.VideoCapture(0)
+    # File upload for the fashion image
+    uploaded_fashion_image = st.file_uploader("Upload a Fashion Image", type=["jpg", "png"])
 
-    # Load fashion image
-    fashion_image_path = "fashion_image.jpg"
-    fashion_image = cv2.imread(fashion_image_path)
+    if uploaded_fashion_image is not None:
+        # Convert the uploaded file to an OpenCV image
+        fashion_image = np.array(bytearray(uploaded_fashion_image.read()), dtype=np.uint8)
+        fashion_image = cv2.imdecode(fashion_image, 1)
 
-    while cap.isOpened():
-        # Capture frame-by-frame
-        ret, frame = cap.read()
-        
-        if ret:
-            # Apply style transfer using fashion image style to the captured frame
-            stylized_frame = apply_style_transfer(frame, fashion_image)
+        # Initialize video capture object
+        cap = cv2.VideoCapture(0)
+
+        while cap.isOpened():
+            # Capture frame-by-frame
+            ret, frame = cap.read()
             
-            # Display the original and stylized frames
-            st.image([frame, stylized_frame], caption=["Original Frame", "Stylized Frame"], width=300)
+            if ret:
+                # Apply style transfer using fashion image style to the captured frame
+                stylized_frame = apply_style_transfer(frame, fashion_image)
+                
+                # Display the original and stylized frames
+                st.image([frame, stylized_frame], caption=["Original Frame", "Stylized Frame"], width=300)
 
-        # Break the loop if 'q' is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            # Break the loop if 'q' is pressed
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
-    # Release the capture
-    cap.release()
+        # Release the capture
+        cap.release()
 
 if __name__ == "__main__":
     main()
