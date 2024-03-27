@@ -1,64 +1,187 @@
+from io import BytesIO
 import streamlit as st
-import cv2
-import numpy as np
-import tensorflow as tf
-import tensorflow_hub as hub
+import qrcode
+import base64
+import requests
+from bs4 import BeautifulSoup
+from PIL import Image
 
-# Load pre-trained style transfer model
-style_transfer_model = hub.load("https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/2")
+# Global variable to keep track of the number of QR codes generated
+qr_code_count = 0
 
-# Function to apply style transfer to an image
-def apply_style_transfer(image, style_image):
-    # Resize style image to match content image size
-    style_image = cv2.resize(style_image, (image.shape[1], image.shape[0]))
-    # Convert to float32 and normalize pixel values
-    content_image = tf.convert_to_tensor(image, tf.float32) / 255.0
-    style_image = tf.convert_to_tensor(style_image, tf.float32) / 255.0
-    # Apply style transfer
-    stylized_image = style_transfer_model(tf.constant(content_image), tf.constant(style_image))[0]
-    # Convert to numpy array and rescale pixel values
-    stylized_image = (stylized_image.numpy() * 255).astype(np.uint8)
-    return stylized_image
+# Function to generate and display a QR code
+def generate_qr_code(data):
+    global qr_code_count
+    qr_code_count += 1
 
+    # Generate QR code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Convert PIL Image to bytes-like object
+    img_byte_array = BytesIO()
+    qr_img.save(img_byte_array, format="PNG")
+    img_bytes = img_byte_array.getvalue()
+
+    # Display QR code
+    st.image(img_bytes, caption=f"QR Code {qr_code_count}", use_column_width=True)
+
+    # Add button to download the generated QR code
+    st.markdown(get_download_link(img_bytes, f"custom_qr_code_{qr_code_count}.png"), unsafe_allow_html=True)
+
+# Function to generate download link for the QR code
+def get_download_link(file_content, file_name):
+    b64 = base64.b64encode(file_content).decode()
+    href = f'<a href="data:file/png;base64,{b64}" download="{file_name}">Download QR Code {qr_code_count}</a>'
+    return href
+
+# Function to fetch logo image URL from social media URL
+def fetch_logo_from_url(social_media_url):
+    try:
+        response = requests.get(social_media_url)
+        soup = BeautifulSoup(response.content, "html.parser")
+        logo_url = None
+
+        # Logic to extract logo URL from the webpage
+        # This would depend on the structure of the webpage and where the logo is located
+
+        return logo_url
+    except Exception as e:
+        st.error(f"Error fetching logo: {e}")
+        return None
+
+# Function to generate custom QR code with a logo
+def QR_code_design(data, logo, qr_color="black", background_color="white", border_color="black"):
+    # Generate QR code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color=qr_color, back_color=background_color)
+
+    # Open and resize logo image
+    with Image.open(logo) as logo_img:
+        logo_img = logo_img.resize((80, 80))  # Adjust size as needed
+
+    # Calculate position to paste logo on QR code
+    qr_width, qr_height = qr_img.size
+    logo_width, logo_height = logo_img.size
+    position = ((qr_width - logo_width) // 2, (qr_height - logo_height) // 2)
+
+    # Paste logo on QR code
+    qr_img.paste(logo_img, position)
+
+    # Convert PIL Image to bytes-like object
+    img_byte_array = BytesIO()
+    qr_img.save(img_byte_array, format="PNG")
+    img_bytes = img_byte_array.getvalue()
+
+    # Display QR code with logo
+    st.image(qr_img, caption="Custom QR Code", use_column_width=True)
+
+    # Add button to download the generated QR code
+    st.markdown(get_download_link(img_bytes, "custom_qr_code.png"), unsafe_allow_html=True)
+
+# Main function
 def main():
-    st.title("Real-time Fashion Style Transfer")
+    st.title("QR Code Generator")
 
-    # Option to choose image source
-    option = st.radio("Select Image Source", ("Upload Fashion Image", "Use Pre-selected Fashion Image"))
+    # Select number of images
+    num_images = st.number_input("Enter the number of images", value=1, min_value=1, step=1)
 
-    if option == "Upload Fashion Image":
-        # File upload for the fashion image
-        uploaded_fashion_image = st.file_uploader("Upload a Fashion Image", type=["jpg", "png"])
+    for i in range(num_images):
+        # Select QR code type
+        qr_type = st.selectbox(f"Select QR Code Type for Image {i+1}", ["WiFi", "Email", "Phone Call", "SMS", "Social Media", "Audio", "Video", "Image", "PPTX", "QRcode design"])
 
-        if uploaded_fashion_image is not None:
-            # Convert the uploaded file to an OpenCV image
-            fashion_image = np.array(bytearray(uploaded_fashion_image.read()), dtype=np.uint8)
-            fashion_image = cv2.imdecode(fashion_image, 1)
-    else:
-        # Load pre-selected fashion image
-        fashion_image_path = "preselected_fashion_image.jpg"
-        fashion_image = cv2.imread(fashion_image_path)
-
-    # Initialize video capture object
-    cap = cv2.VideoCapture(0)
-
-    while cap.isOpened():
-        # Capture frame-by-frame
-        ret, frame = cap.read()
-        
-        if ret:
-            # Apply style transfer using fashion image style to the captured frame
-            stylized_frame = apply_style_transfer(frame, fashion_image)
+        if st.button(f"Generate QR Code for Image {i+1}"):
+            if qr_type == "WiFi":
+                ssid = st.text_input("Enter WiFi SSID")
+                password = st.text_input("Enter WiFi Password", type="password")
+                wifi_data = f"WIFI:T:WPA;S:{ssid};P:{password};;"
+                generate_qr_code(wifi_data)
             
-            # Display the original and stylized frames
-            st.image([frame, stylized_frame], caption=["Original Frame", "Stylized Frame"], width=300)
+            elif qr_type == "Email":
+                email = st.text_input("Enter Email Address")
+                subject = st.text_input("Enter Email Subject")
+                body = st.text_area("Enter Email Body")
+                email_data = f"mailto:{email}?subject={subject}&body={body}"
+                generate_qr_code(email_data)
+            
+            elif qr_type == "Phone Call":
+                phone_number = st.text_input("Enter Phone Number")
+                phone_call_data = f"tel:{phone_number}"
+                generate_qr_code(phone_call_data)
+                
+            elif qr_type == "QRcode design":
+                st.title("Custom QR Code Generator with Logo")
 
-        # Break the loop if 'q' is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+                # User inputs
+                data = st.text_input("Enter data for QR code")
+                logo = st.file_uploader("Upload logo image (PNG or JPEG)", type=["png", "jpg", "jpeg"])
 
-    # Release the capture
-    cap.release()
+                if st.button("Generate Custom QR Code"):
+                    if data:
+                        if logo:
+                            QR_code_design(data, logo)
+                        else:
+                            st.warning("Please upload a logo image.")
+                    else:
+                        st.warning("Please enter data for the QR code.")
+            
+            elif qr_type == "Social Media":
+                st.title("QR Code Generator")
+
+                # Input field for social media URL
+                social_media_url = st.text_input("Enter Social Media URL")
+
+                if st.button("Generate QR Code"):
+                    if social_media_url:
+                        # Fetch the logo URL from the social media URL
+                        logo_url = fetch_logo_from_url(social_media_url)
+
+                        if logo_url:
+                            # Download the logo image
+                            logo_content = requests.get(logo_url).content
+
+                            # Generate QR code using the logo image
+                            QR_code_design(social_media_url, BytesIO(logo_content))
+                        else:
+                            st.warning("Logo not found on the provided URL.")
+                    else:
+                        st.warning("Please enter the Social Media URL.")
+            
+            elif qr_type == "Audio":
+                audio_file = st.file_uploader("Upload Audio File", type=["mp3", "wav"])
+                if audio_file is not None:
+                    generate_qr_code(audio_file.getvalue())
+            
+            elif qr_type == "Video":
+                video_file = st.file_uploader("Upload Video File", type=["mp4"])
+                if video_file is not None:
+                    generate_qr_code(video_file.getvalue())
+            
+            elif qr_type == "Image":
+                image_file = st.file_uploader("Upload Image File", type=["jpg", "png"])
+                if image_file is not None:
+                    generate_qr_code(image_file.getvalue())
+            
+            elif qr_type == "PPTX":
+                pptx_file = st.file_uploader("Upload PowerPoint File", type=["pptx"])
+                if pptx_file is not None:
+                    generate_qr_code(pptx_file.getvalue())
 
 if __name__ == "__main__":
     main()
+               
+               
